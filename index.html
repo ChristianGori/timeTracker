@@ -11,12 +11,36 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f7; color: #1d1d1f; }
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .header { background: rgba(255,255,255,0.8); backdrop-filter: blur(20px); padding: 20px 0; border-bottom: 1px solid rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
-        .nav { display: flex; justify-content: center; gap: 30px; }
-        .nav-btn { background: none; border: none; font-size: 17px; font-weight: 500; color: #86868b; cursor: pointer; padding: 8px 16px; border-radius: 20px; transition: all 0.3s ease; }
-        .nav-btn.active { color: #007aff; background: rgba(0,122,255,0.1); }
-        .nav-btn:hover { color: #007aff; }
-        .page { display: none; padding: 40px 0; }
+        
+        /* Header and Navigation */
+        .header { background: rgba(255,255,255,0.8); backdrop-filter: blur(20px); padding: 15px 0; border-bottom: 1px solid rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-container { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 20px; font-weight: 600; color: #1d1d1f; }
+        
+        /* Desktop Navigation */
+        .nav-desktop { display: flex; gap: 30px; }
+        .nav-desktop .nav-btn { background: none; border: none; font-size: 16px; font-weight: 500; color: #86868b; cursor: pointer; padding: 8px 16px; border-radius: 20px; transition: all 0.3s ease; }
+        .nav-desktop .nav-btn.active { color: #007aff; background: rgba(0,122,255,0.1); }
+        .nav-desktop .nav-btn:hover { color: #007aff; }
+        
+        /* Mobile Navigation */
+        .nav-mobile { display: none; }
+        .hamburger { background: none; border: none; cursor: pointer; padding: 8px; }
+        .hamburger span { display: block; width: 20px; height: 2px; background: #1d1d1f; margin: 4px 0; transition: 0.3s; }
+        .hamburger.active span:nth-child(1) { transform: rotate(-45deg) translate(-4px, 4px); }
+        .hamburger.active span:nth-child(2) { opacity: 0; }
+        .hamburger.active span:nth-child(3) { transform: rotate(45deg) translate(-4px, -4px); }
+        
+        .mobile-menu { position: fixed; top: 0; right: -100%; width: 280px; height: 100vh; background: white; box-shadow: -2px 0 10px rgba(0,0,0,0.1); transition: right 0.3s ease; padding: 60px 20px 20px; z-index: 101; }
+        .mobile-menu.active { right: 0; }
+        .mobile-menu .nav-btn { display: block; width: 100%; background: none; border: none; font-size: 18px; font-weight: 500; color: #1d1d1f; cursor: pointer; padding: 15px 0; border-bottom: 1px solid #f0f0f0; transition: all 0.3s ease; text-align: left; }
+        .mobile-menu .nav-btn.active { color: #007aff; }
+        .mobile-menu .nav-btn:hover { color: #007aff; }
+        
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); opacity: 0; visibility: hidden; transition: all 0.3s ease; z-index: 100; }
+        .overlay.active { opacity: 1; visibility: visible; }
+        
+        .page { display: none; padding: 20px 0; }
         .page.active { display: block; }
         .card { background: white; border-radius: 16px; padding: 30px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05); }
         .input-group { margin-bottom: 20px; }
@@ -31,37 +55,30 @@
         .btn.danger:hover { background: #d70015; }
         .btn.success { background: #34c759; }
         .btn.success:hover { background: #248a3d; }
-        .timer-section { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-        .timer-display { text-align: center; min-width: 120px; }
-        .timer-time { font-size: 32px; font-weight: 300; color: #007aff; font-variant-numeric: tabular-nums; margin: 0; }
-        .timer-activity { font-size: 14px; color: #86868b; margin-top: 5px; }
-        .timer-controls { display: flex; gap: 10px; flex-shrink: 0; }
-        .btn-icon { background: #007aff; color: white; border: none; padding: 10px; border-radius: 50%; cursor: pointer; transition: all 0.3s ease; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
-        .btn-icon:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        
+        /* Timer Section - Centered */
+        .timer-section { display: flex; flex-direction: column; align-items: center; gap: 20px; background: #f8f9fa; padding: 30px; border-radius: 16px; margin-bottom: 30px; }
+        .timer-display { text-align: center; }
+        .timer-time { font-size: 48px; font-weight: 200; color: #007aff; font-variant-numeric: tabular-nums; margin: 0; }
+        .timer-activity { font-size: 16px; color: #86868b; margin: 10px 0; }
+        .timer-controls { display: flex; gap: 15px; }
+        .btn-icon { background: #007aff; color: white; border: none; padding: 15px; border-radius: 50%; cursor: pointer; transition: all 0.3s ease; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; }
+        .btn-icon:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.2); }
         .btn-icon.success { background: #34c759; }
         .btn-icon.success:hover { background: #248a3d; }
         .btn-icon.danger { background: #ff3b30; }
         .btn-icon.danger:hover { background: #d70015; }
         .btn-icon:disabled { background: #d2d2d7; cursor: not-allowed; transform: none; box-shadow: none; }
+        
         .activity-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #f8f9fa; border-radius: 12px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s ease; }
         .activity-item:hover { background: #e9ecef; transform: translateY(-1px); }
         .activity-item.selected { background: #007aff; color: white; }
         .activity-item.selected .activity-info p { color: rgba(255,255,255,0.8); }
-        .activity-info h3 { margin-bottom: 4px; font-size: 16px; }
-        .activity-info p { margin: 0; font-size: 14px; }
+        .activity-info h3 { margin-bottom: 4px; font-size: 16px; color: #1d1d1f; }
+        .activity-info p { margin: 0; font-size: 14px; color: #86868b; }
         .activity-actions { display: flex; gap: 8px; flex-shrink: 0; }
         .activity-actions button { padding: 8px 16px; font-size: 14px; white-space: nowrap; }
-        .mobile-stack { display: flex; flex-direction: column; gap: 15px; }
-        .mobile-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-        .mobile-header h2 { margin: 0; }
-        .mobile-timer { background: #f8f9fa; padding: 15px; border-radius: 12px; text-align: center; }
-        .mobile-timer .timer-time { font-size: 28px; }
-        .mobile-timer .timer-activity { font-size: 12px; margin-top: 5px; margin-bottom: 10px; }
-        .mobile-timer .timer-controls { justify-content: center; }
-        .activity-info h3 { color: #1d1d1f; margin-bottom: 4px; }
-        .activity-info p { color: #86868b; font-size: 14px; }
-        .activity-actions { display: flex; gap: 10px; }
-        .activity-actions button { padding: 6px 12px; font-size: 14px; }
+        
         .filters { display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; }
         .chart-container { position: relative; height: 400px; margin-top: 30px; }
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
@@ -71,9 +88,12 @@
         .empty-state { text-align: center; padding: 60px 20px; color: #86868b; }
         .empty-state h3 { margin-bottom: 10px; }
         .archived-badge { background: #ff9500; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-left: 10px; }
+        
         @media (max-width: 768px) {
-            .nav { flex-direction: column; align-items: center; }
+            .nav-desktop { display: none; }
+            .nav-mobile { display: block; }
             .timer-time { font-size: 36px; }
+            .timer-section { padding: 20px; }
             .activity-item { flex-direction: column; align-items: flex-start; gap: 10px; }
             .filters { flex-direction: column; }
         }
@@ -82,13 +102,35 @@
 <body>
     <div class="header">
         <div class="container">
-            <nav class="nav">
-                <button class="nav-btn active" onclick="showPage('home')">Home</button>
-                <button class="nav-btn" onclick="showPage('storico')">Storico</button>
-                <button class="nav-btn" onclick="showPage('archiviate')">Archiviate</button>
-            </nav>
+            <div class="nav-container">
+                <div class="logo">Time Tracker</div>
+                
+                <!-- Desktop Navigation -->
+                <nav class="nav-desktop">
+                    <button class="nav-btn active" onclick="showPage('home')">Home</button>
+                    <button class="nav-btn" onclick="showPage('storico')">Storico</button>
+                    <button class="nav-btn" onclick="showPage('archiviate')">Archiviate</button>
+                </nav>
+                
+                <!-- Mobile Navigation -->
+                <div class="nav-mobile">
+                    <button class="hamburger" onclick="toggleMobileMenu()">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="nav-btn active" onclick="showPage('home'); closeMobileMenu()">Home</button>
+        <button class="nav-btn" onclick="showPage('storico'); closeMobileMenu()">Storico</button>
+        <button class="nav-btn" onclick="showPage('archiviate'); closeMobileMenu()">Archiviate</button>
+    </div>
+    <div class="overlay" id="overlay" onclick="closeMobileMenu()"></div>
 
     <div class="container">
         <!-- HOME PAGE -->
@@ -113,45 +155,28 @@
             </div>
 
             <div class="card">
-                <div class="mobile-header">
-                    <h2>Attività Attive</h2>
-                    <div class="mobile-timer">
+                <h2>Attività Attive</h2>
+                
+                <!-- Timer Section - Centered -->
+                <div class="timer-section">
+                    <div class="timer-display">
                         <div class="timer-time" id="timerDisplay">00:00:00</div>
                         <div class="timer-activity" id="currentActivity">Seleziona un'attività</div>
-                        <div class="timer-controls">
-                            <button class="btn-icon success" id="startBtn" onclick="startTimer()" disabled>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M8 5v14l11-7z"/>
-                                </svg>
-                            </button>
-                            <button class="btn-icon danger" id="stopBtn" onclick="stopTimer()" disabled>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <rect x="6" y="6" width="12" height="12"/>
-                                </svg>
-                            </button>
-                        </div>
+                    </div>
+                    <div class="timer-controls">
+                        <button class="btn-icon success" id="startBtn" onclick="startTimer()" disabled>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M8 5v14l11-7z"/>
+                            </svg>
+                        </button>
+                        <button class="btn-icon danger" id="stopBtn" onclick="stopTimer()" disabled>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <rect x="6" y="6" width="12" height="12"/>
+                            </svg>
+                        </button>
                     </div>
                 </div>
-                <div class="desktop-timer" style="display: none;">
-                    <div class="timer-section">
-                        <div class="timer-display">
-                            <div class="timer-time" id="timerDisplayDesktop">00:00:00</div>
-                            <div class="timer-activity" id="currentActivityDesktop">Seleziona un'attività</div>
-                        </div>
-                        <div class="timer-controls">
-                            <button class="btn-icon success" id="startBtnDesktop" onclick="startTimer()" disabled>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M8 5v14l11-7z"/>
-                                </svg>
-                            </button>
-                            <button class="btn-icon danger" id="stopBtnDesktop" onclick="stopTimer()" disabled>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <rect x="6" y="6" width="12" height="12"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                
                 <div id="activeActivities"></div>
             </div>
         </div>
@@ -205,12 +230,36 @@
         let currentActivityId = null;
         let chart = null;
 
+        // Mobile Menu Functions
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            const overlay = document.getElementById('overlay');
+            const hamburger = document.querySelector('.hamburger');
+            
+            mobileMenu.classList.toggle('active');
+            overlay.classList.toggle('active');
+            hamburger.classList.toggle('active');
+        }
+
+        function closeMobileMenu() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            const overlay = document.getElementById('overlay');
+            const hamburger = document.querySelector('.hamburger');
+            
+            mobileMenu.classList.remove('active');
+            overlay.classList.remove('active');
+            hamburger.classList.remove('active');
+        }
+
         // Navigation
         function showPage(pageId) {
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
-            event.target.classList.add('active');
+            
+            // Update active state for both desktop and mobile nav
+            const activeButtons = document.querySelectorAll(`.nav-btn[onclick*="${pageId}"]`);
+            activeButtons.forEach(btn => btn.classList.add('active'));
             
             if (pageId === 'storico') updateStats();
             if (pageId === 'archiviate') loadArchivedActivities();
@@ -287,21 +336,6 @@
             document.querySelector(`[data-id="${id}"]`).classList.add('selected');
             
             currentActivityId = id;
-            
-            // Update both mobile and desktop displays
-            const mobileActivity = document.getElementById('currentActivity');
-            const desktopActivity = document.getElementById('currentActivityDesktop');
-            
-            if (mobileActivity) mobileActivity.textContent = name;
-            if (desktopActivity) desktopActivity.textContent = name;
-            
-            // Enable start buttons
-            const startBtns = document.querySelectorAll('#startBtn, #startBtnDesktop');
-            startBtns.forEach(btn => btn.disabled = false);
-        }
-
-        function selectActivity(id, name) {
-            currentActivityId = id;
             document.getElementById('currentActivity').textContent = name;
             document.getElementById('startBtn').disabled = false;
         }
@@ -313,12 +347,8 @@
             startTime = Date.now();
             currentTimer = setInterval(updateTimerDisplay, 1000);
             
-            // Disable start buttons, enable stop buttons
-            const startBtns = document.querySelectorAll('#startBtn, #startBtnDesktop');
-            const stopBtns = document.querySelectorAll('#stopBtn, #stopBtnDesktop');
-            
-            startBtns.forEach(btn => btn.disabled = true);
-            stopBtns.forEach(btn => btn.disabled = false);
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
         }
 
         async function stopTimer() {
@@ -329,13 +359,17 @@
             const duration = endTime - startTime;
             
             try {
-                // Save time entry
+                // Save time entry with current date
+                const now = new Date();
+                const dateStr = now.toISOString().split('T')[0];
+                
                 await db.collection('timeEntries').add({
                     activityId: currentActivityId,
                     startTime: new Date(startTime),
                     endTime: new Date(endTime),
                     duration: duration,
-                    date: new Date().toISOString().split('T')[0]
+                    date: dateStr,
+                    createdAt: now
                 });
                 
                 // Update activity total time
@@ -346,26 +380,13 @@
                     totalTime: currentTotal + duration
                 });
                 
-                // Reset timer displays
+                // Reset timer
                 currentTimer = null;
                 startTime = null;
-                
-                const mobileDisplay = document.getElementById('timerDisplay');
-                const desktopDisplay = document.getElementById('timerDisplayDesktop');
-                const mobileActivity = document.getElementById('currentActivity');
-                const desktopActivity = document.getElementById('currentActivityDesktop');
-                
-                if (mobileDisplay) mobileDisplay.textContent = '00:00:00';
-                if (desktopDisplay) desktopDisplay.textContent = '00:00:00';
-                if (mobileActivity) mobileActivity.textContent = 'Seleziona un\'attività';
-                if (desktopActivity) desktopActivity.textContent = 'Seleziona un\'attività';
-                
-                // Reset button states
-                const startBtns = document.querySelectorAll('#startBtn, #startBtnDesktop');
-                const stopBtns = document.querySelectorAll('#stopBtn, #stopBtnDesktop');
-                
-                startBtns.forEach(btn => btn.disabled = true);
-                stopBtns.forEach(btn => btn.disabled = true);
+                document.getElementById('timerDisplay').textContent = '00:00:00';
+                document.getElementById('currentActivity').textContent = 'Seleziona un\'attività';
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = true;
                 
                 // Remove selection from all activities
                 document.querySelectorAll('.activity-item').forEach(item => {
@@ -373,7 +394,6 @@
                 });
                 
                 currentActivityId = null;
-                
                 loadActiveActivities();
             } catch (error) {
                 console.error('Errore nel salvataggio del tempo:', error);
@@ -385,13 +405,7 @@
             if (!startTime) return;
             const elapsed = Date.now() - startTime;
             const formattedTime = formatTime(elapsed);
-            
-            // Update both mobile and desktop displays
-            const mobileDisplay = document.getElementById('timerDisplay');
-            const desktopDisplay = document.getElementById('timerDisplayDesktop');
-            
-            if (mobileDisplay) mobileDisplay.textContent = formattedTime;
-            if (desktopDisplay) desktopDisplay.textContent = formattedTime;
+            document.getElementById('timerDisplay').textContent = formattedTime;
         }
 
         // Archive Management
@@ -479,9 +493,10 @@
             
             switch (period) {
                 case 'day':
+                    const todayStr = today.toISOString().split('T')[0];
                     return {
-                        start: today.toISOString().split('T')[0],
-                        end: today.toISOString().split('T')[0]
+                        start: todayStr,
+                        end: todayStr
                     };
                 case 'week':
                     const weekStart = new Date(today);
