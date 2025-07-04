@@ -31,11 +31,11 @@
         .btn.danger:hover { background: #d70015; }
         .btn.success { background: #34c759; }
         .btn.success:hover { background: #248a3d; }
-        .timer-section { display: flex; align-items: center; gap: 20px; }
-        .timer-display { text-align: center; }
+        .timer-section { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .timer-display { text-align: center; min-width: 120px; }
         .timer-time { font-size: 32px; font-weight: 300; color: #007aff; font-variant-numeric: tabular-nums; margin: 0; }
         .timer-activity { font-size: 14px; color: #86868b; margin-top: 5px; }
-        .timer-controls { display: flex; gap: 10px; }
+        .timer-controls { display: flex; gap: 10px; flex-shrink: 0; }
         .btn-icon { background: #007aff; color: white; border: none; padding: 10px; border-radius: 50%; cursor: pointer; transition: all 0.3s ease; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
         .btn-icon:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .btn-icon.success { background: #34c759; }
@@ -47,6 +47,17 @@
         .activity-item:hover { background: #e9ecef; transform: translateY(-1px); }
         .activity-item.selected { background: #007aff; color: white; }
         .activity-item.selected .activity-info p { color: rgba(255,255,255,0.8); }
+        .activity-info h3 { margin-bottom: 4px; font-size: 16px; }
+        .activity-info p { margin: 0; font-size: 14px; }
+        .activity-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .activity-actions button { padding: 8px 16px; font-size: 14px; white-space: nowrap; }
+        .mobile-stack { display: flex; flex-direction: column; gap: 15px; }
+        .mobile-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+        .mobile-header h2 { margin: 0; }
+        .mobile-timer { background: #f8f9fa; padding: 15px; border-radius: 12px; text-align: center; }
+        .mobile-timer .timer-time { font-size: 28px; }
+        .mobile-timer .timer-activity { font-size: 12px; margin-top: 5px; margin-bottom: 10px; }
+        .mobile-timer .timer-controls { justify-content: center; }
         .activity-info h3 { color: #1d1d1f; margin-bottom: 4px; }
         .activity-info p { color: #86868b; font-size: 14px; }
         .activity-actions { display: flex; gap: 10px; }
@@ -102,13 +113,11 @@
             </div>
 
             <div class="card">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                <div class="mobile-header">
                     <h2>Attività Attive</h2>
-                    <div class="timer-section">
-                        <div class="timer-display">
-                            <div class="timer-time" id="timerDisplay">00:00:00</div>
-                            <div class="timer-activity" id="currentActivity">Seleziona un'attività</div>
-                        </div>
+                    <div class="mobile-timer">
+                        <div class="timer-time" id="timerDisplay">00:00:00</div>
+                        <div class="timer-activity" id="currentActivity">Seleziona un'attività</div>
                         <div class="timer-controls">
                             <button class="btn-icon success" id="startBtn" onclick="startTimer()" disabled>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -116,6 +125,26 @@
                                 </svg>
                             </button>
                             <button class="btn-icon danger" id="stopBtn" onclick="stopTimer()" disabled>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                    <rect x="6" y="6" width="12" height="12"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="desktop-timer" style="display: none;">
+                    <div class="timer-section">
+                        <div class="timer-display">
+                            <div class="timer-time" id="timerDisplayDesktop">00:00:00</div>
+                            <div class="timer-activity" id="currentActivityDesktop">Seleziona un'attività</div>
+                        </div>
+                        <div class="timer-controls">
+                            <button class="btn-icon success" id="startBtnDesktop" onclick="startTimer()" disabled>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M8 5v14l11-7z"/>
+                                </svg>
+                            </button>
+                            <button class="btn-icon danger" id="stopBtnDesktop" onclick="stopTimer()" disabled>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                     <rect x="6" y="6" width="12" height="12"/>
                                 </svg>
@@ -258,8 +287,17 @@
             document.querySelector(`[data-id="${id}"]`).classList.add('selected');
             
             currentActivityId = id;
-            document.getElementById('currentActivity').textContent = name;
-            document.getElementById('startBtn').disabled = false;
+            
+            // Update both mobile and desktop displays
+            const mobileActivity = document.getElementById('currentActivity');
+            const desktopActivity = document.getElementById('currentActivityDesktop');
+            
+            if (mobileActivity) mobileActivity.textContent = name;
+            if (desktopActivity) desktopActivity.textContent = name;
+            
+            // Enable start buttons
+            const startBtns = document.querySelectorAll('#startBtn, #startBtnDesktop');
+            startBtns.forEach(btn => btn.disabled = false);
         }
 
         function selectActivity(id, name) {
@@ -274,8 +312,13 @@
             
             startTime = Date.now();
             currentTimer = setInterval(updateTimerDisplay, 1000);
-            document.getElementById('startBtn').disabled = true;
-            document.getElementById('stopBtn').disabled = false;
+            
+            // Disable start buttons, enable stop buttons
+            const startBtns = document.querySelectorAll('#startBtn, #startBtnDesktop');
+            const stopBtns = document.querySelectorAll('#stopBtn, #stopBtnDesktop');
+            
+            startBtns.forEach(btn => btn.disabled = true);
+            stopBtns.forEach(btn => btn.disabled = false);
         }
 
         async function stopTimer() {
@@ -303,13 +346,26 @@
                     totalTime: currentTotal + duration
                 });
                 
-                // Reset timer
+                // Reset timer displays
                 currentTimer = null;
                 startTime = null;
-                document.getElementById('timerDisplay').textContent = '00:00:00';
-                document.getElementById('currentActivity').textContent = 'Seleziona un\'attività';
-                document.getElementById('startBtn').disabled = true;
-                document.getElementById('stopBtn').disabled = true;
+                
+                const mobileDisplay = document.getElementById('timerDisplay');
+                const desktopDisplay = document.getElementById('timerDisplayDesktop');
+                const mobileActivity = document.getElementById('currentActivity');
+                const desktopActivity = document.getElementById('currentActivityDesktop');
+                
+                if (mobileDisplay) mobileDisplay.textContent = '00:00:00';
+                if (desktopDisplay) desktopDisplay.textContent = '00:00:00';
+                if (mobileActivity) mobileActivity.textContent = 'Seleziona un\'attività';
+                if (desktopActivity) desktopActivity.textContent = 'Seleziona un\'attività';
+                
+                // Reset button states
+                const startBtns = document.querySelectorAll('#startBtn, #startBtnDesktop');
+                const stopBtns = document.querySelectorAll('#stopBtn, #stopBtnDesktop');
+                
+                startBtns.forEach(btn => btn.disabled = true);
+                stopBtns.forEach(btn => btn.disabled = true);
                 
                 // Remove selection from all activities
                 document.querySelectorAll('.activity-item').forEach(item => {
@@ -328,7 +384,14 @@
         function updateTimerDisplay() {
             if (!startTime) return;
             const elapsed = Date.now() - startTime;
-            document.getElementById('timerDisplay').textContent = formatTime(elapsed);
+            const formattedTime = formatTime(elapsed);
+            
+            // Update both mobile and desktop displays
+            const mobileDisplay = document.getElementById('timerDisplay');
+            const desktopDisplay = document.getElementById('timerDisplayDesktop');
+            
+            if (mobileDisplay) mobileDisplay.textContent = formattedTime;
+            if (desktopDisplay) desktopDisplay.textContent = formattedTime;
         }
 
         // Archive Management
@@ -336,31 +399,32 @@
             try {
                 await db.collection('activities').doc(id).update({
                     archived: true,
-                    archivedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    archivedAt: new Date()
                 });
                 loadActiveActivities();
+                console.log('Attività archiviata con successo');
             } catch (error) {
                 console.error('Errore nell\'archiviazione:', error);
-                alert('Errore nell\'archiviazione dell\'attività');
+                alert('Errore nell\'archiviazione dell\'attività: ' + error.message);
             }
         }
 
         async function restoreActivity(id) {
             try {
                 await db.collection('activities').doc(id).update({
-                    archived: false,
-                    archivedAt: firebase.firestore.FieldValue.delete()
+                    archived: false
                 });
                 loadArchivedActivities();
+                console.log('Attività ripristinata con successo');
             } catch (error) {
                 console.error('Errore nel ripristino:', error);
-                alert('Errore nel ripristino dell\'attività');
+                alert('Errore nel ripristino dell\'attività: ' + error.message);
             }
         }
 
         async function loadArchivedActivities() {
             try {
-                const snapshot = await db.collection('activities').where('archived', '==', true).orderBy('archivedAt', 'desc').get();
+                const snapshot = await db.collection('activities').where('archived', '==', true).get();
                 const container = document.getElementById('archivedActivities');
                 
                 if (snapshot.empty) {
@@ -384,6 +448,7 @@
                     `;
                     container.appendChild(div);
                 });
+                console.log('Caricate', snapshot.size, 'attività archiviate');
             } catch (error) {
                 console.error('Errore nel caricamento delle attività archiviate:', error);
             }
