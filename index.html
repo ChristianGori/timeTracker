@@ -479,7 +479,7 @@
                     .where('date', '<=', dateRange.end)
                     .get();
                 
-                const stats = processStats(snapshot);
+                const stats = await processStatsWithNames(snapshot);
                 displayStats(stats);
                 updateChart(stats);
             } catch (error) {
@@ -520,25 +520,44 @@
             }
         }
 
-        function processStats(snapshot) {
+        async function processStatsWithNames(snapshot) {
             const activities = {};
             let totalTime = 0;
+            const activityIds = new Set();
             
+            // First pass: collect activity IDs and calculate durations
             snapshot.forEach(doc => {
                 const entry = doc.data();
                 const duration = entry.duration || 0;
                 totalTime += duration;
+                activityIds.add(entry.activityId);
                 
                 if (!activities[entry.activityId]) {
                     activities[entry.activityId] = {
                         duration: 0,
-                        sessions: 0
+                        sessions: 0,
+                        name: 'Attività sconosciuta'
                     };
                 }
                 
                 activities[entry.activityId].duration += duration;
                 activities[entry.activityId].sessions++;
             });
+            
+            // Second pass: get activity names from database
+            if (activityIds.size > 0) {
+                const activityPromises = Array.from(activityIds).map(id => 
+                    db.collection('activities').doc(id).get()
+                );
+                
+                const activityDocs = await Promise.all(activityPromises);
+                
+                activityDocs.forEach(doc => {
+                    if (doc.exists && activities[doc.id]) {
+                        activities[doc.id].name = doc.data().name;
+                    }
+                });
+            }
             
             return {
                 totalTime,
@@ -577,7 +596,7 @@
             const colors = ['#007aff', '#34c759', '#ff9500', '#ff3b30', '#af52de', '#5ac8fa'];
             
             Object.entries(stats.activities).forEach(([activityId, activity], index) => {
-                labels.push(`Attività ${index + 1}`);
+                labels.push(activity.name); // Now using the actual activity name
                 data.push(Math.round(activity.duration / 60000)); // Convert to minutes
             });
             
