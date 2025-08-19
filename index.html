@@ -79,8 +79,18 @@
         .activity-actions { display: flex; gap: 8px; flex-shrink: 0; }
         .activity-actions button { padding: 8px 16px; font-size: 14px; white-space: nowrap; }
         
-        .filters { display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; }
-        .chart-container { position: relative; height: 400px; margin-top: 30px; }
+        .filters { margin-bottom: 30px; }
+        .filter-tabs { display: flex; background: #f2f2f7; border-radius: 12px; padding: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filter-tab { flex: 1; padding: 12px 20px; border: none; background: transparent; color: #86868b; font-weight: 500; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: center; min-width: 120px; }
+        .filter-tab.active { background: white; color: #007aff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .filter-tab:hover { color: #007aff; }
+        .custom-date-section { background: white; border-radius: 12px; padding: 20px; display: none; }
+        .custom-date-section.active { display: block; }
+        .custom-date-inputs { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        .date-input-group { display: flex; flex-direction: column; gap: 5px; }
+        .date-input-group label { font-size: 14px; font-weight: 500; color: #1d1d1f; }
+        .date-input-group input { padding: 10px 12px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; }
+        .chart-container { position: relative; height: 400px; margin-bottom: 30px; background: white; padding: 20px; border-radius: 12px; }
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center; }
         .stat-value { font-size: 24px; font-weight: 600; margin-bottom: 5px; }
@@ -96,6 +106,10 @@
             .timer-section { padding: 20px; }
             .activity-item { flex-direction: column; align-items: flex-start; gap: 10px; }
             .filters { flex-direction: column; }
+            .filter-tabs { flex-direction: column; }
+            .filter-tab { min-width: unset; }
+            .custom-date-inputs { flex-direction: column; align-items: stretch; }
+            .date-input-group { width: 100%; }
         }
     </style>
 </head>
@@ -184,18 +198,35 @@
         <!-- STORICO PAGE -->
         <div id="storico" class="page">
             <div class="card">
-                <h2>Statistiche</h2>
+                <h2>Statistiche e Andamento Temporale</h2>
                 <div class="filters">
-                    <select id="periodFilter" onchange="updateStats()">
-                        <option value="day">Oggi</option>
-                        <option value="week">Questa settimana</option>
-                        <option value="month">Questo mese</option>
-                        <option value="year">Quest'anno</option>
-                    </select>
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" onclick="selectPeriod('day')">Ultimi 7 giorni</button>
+                        <button class="filter-tab" onclick="selectPeriod('week')">Ultime 4 settimane</button>
+                        <button class="filter-tab" onclick="selectPeriod('month')">Ultimi 6 mesi</button>
+                        <button class="filter-tab" onclick="selectPeriod('year')">Ultimo anno</button>
+                        <button class="filter-tab" onclick="selectPeriod('custom')">Personalizzato</button>
+                    </div>
+                    <div class="custom-date-section" id="customDateSection">
+                        <div class="custom-date-inputs">
+                            <div class="date-input-group">
+                                <label>Data inizio</label>
+                                <input type="date" id="startDate">
+                            </div>
+                            <div class="date-input-group">
+                                <label>Data fine</label>
+                                <input type="date" id="endDate">
+                            </div>
+                            <button class="btn" onclick="applyCustomDates()">Applica</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="stats-grid" id="statsGrid"></div>
                 <div class="chart-container">
-                    <canvas id="activityChart"></canvas>
+                    <canvas id="timelineChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="pieChart"></canvas>
                 </div>
             </div>
         </div>
@@ -228,7 +259,9 @@
         let currentTimer = null;
         let startTime = null;
         let currentActivityId = null;
-        let chart = null;
+        let timelineChart = null;
+        let pieChart = null;
+        let selectedPeriod = 'day';
 
         // Mobile Menu Functions
         function toggleMobileMenu() {
@@ -468,10 +501,50 @@
             }
         }
 
-        // Statistics
+        // Period Selection
+        function selectPeriod(period) {
+            selectedPeriod = period;
+            
+            // Update tab appearance
+            document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const customSection = document.getElementById('customDateSection');
+            if (period === 'custom') {
+                customSection.classList.add('active');
+                setDefaultCustomDates();
+            } else {
+                customSection.classList.remove('active');
+                updateStats();
+            }
+        }
+
+        function setDefaultCustomDates() {
+            const today = new Date();
+            const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+            document.getElementById('startDate').value = weekAgo.toISOString().split('T')[0];
+        }
+
+        function applyCustomDates() {
+            if (!document.getElementById('startDate').value || !document.getElementById('endDate').value) {
+                alert('Seleziona entrambe le date');
+                return;
+            }
+            updateStats();
+        }
+
+        // Statistics and Timeline Chart
         async function updateStats() {
-            const period = document.getElementById('periodFilter').value;
-            const dateRange = getDateRange(period);
+            const customSection = document.getElementById('customDateSection');
+            
+            if (selectedPeriod === 'custom') {
+                if (!document.getElementById('startDate').value || !document.getElementById('endDate').value) {
+                    return;
+                }
+            }
+            
+            const dateRange = getTimelineDateRange(selectedPeriod);
             
             try {
                 const snapshot = await db.collection('timeEntries')
@@ -479,135 +552,281 @@
                     .where('date', '<=', dateRange.end)
                     .get();
                 
-                const stats = await processStatsWithNames(snapshot);
-                displayStats(stats);
-                updateChart(stats);
+                const timelineData = await processTimelineData(snapshot, dateRange);
+                displayTimelineStats(timelineData);
+                updateTimelineChart(timelineData, selectedPeriod);
+                updatePieChart(timelineData);
             } catch (error) {
                 console.error('Errore nel caricamento delle statistiche:', error);
             }
         }
 
-        function getDateRange(period) {
+        function getTimelineDateRange(period) {
             const now = new Date();
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            let start, end = now.toISOString().split('T')[0];
             
             switch (period) {
                 case 'day':
-                    const todayStr = today.toISOString().split('T')[0];
-                    return {
-                        start: todayStr,
-                        end: todayStr
-                    };
+                    start = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                    break;
                 case 'week':
-                    const weekStart = new Date(today);
-                    weekStart.setDate(today.getDate() - today.getDay());
-                    return {
-                        start: weekStart.toISOString().split('T')[0],
-                        end: today.toISOString().split('T')[0]
-                    };
+                    start = new Date(now.getTime() - 27 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                    break;
                 case 'month':
-                    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-                    return {
-                        start: monthStart.toISOString().split('T')[0],
-                        end: today.toISOString().split('T')[0]
-                    };
+                    start = new Date(now.getTime() - 179 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                    break;
                 case 'year':
-                    const yearStart = new Date(today.getFullYear(), 0, 1);
-                    return {
-                        start: yearStart.toISOString().split('T')[0],
-                        end: today.toISOString().split('T')[0]
-                    };
+                    start = new Date(now.getTime() - 364 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                    break;
+                case 'custom':
+                    start = document.getElementById('startDate').value;
+                    end = document.getElementById('endDate').value;
+                    break;
             }
+            
+            return { start, end };
         }
 
-        async function processStatsWithNames(snapshot) {
+        async function processTimelineData(snapshot, dateRange) {
             const activities = {};
-            let totalTime = 0;
+            const dates = generateDateRange(dateRange.start, dateRange.end);
             const activityIds = new Set();
             
-            // First pass: collect activity IDs and calculate durations
+            // Initialize data structure
             snapshot.forEach(doc => {
                 const entry = doc.data();
-                const duration = entry.duration || 0;
-                totalTime += duration;
                 activityIds.add(entry.activityId);
-                
-                if (!activities[entry.activityId]) {
-                    activities[entry.activityId] = {
-                        duration: 0,
-                        sessions: 0,
-                        name: 'Attività sconosciuta'
-                    };
-                }
-                
-                activities[entry.activityId].duration += duration;
-                activities[entry.activityId].sessions++;
             });
             
-            // Second pass: get activity names from database
+            // Get activity names
+            const activityNames = {};
             if (activityIds.size > 0) {
                 const activityPromises = Array.from(activityIds).map(id => 
                     db.collection('activities').doc(id).get()
                 );
-                
                 const activityDocs = await Promise.all(activityPromises);
-                
                 activityDocs.forEach(doc => {
-                    if (doc.exists && activities[doc.id]) {
-                        activities[doc.id].name = doc.data().name;
+                    if (doc.exists) {
+                        activityNames[doc.id] = doc.data().name;
                     }
                 });
             }
             
-            return {
-                totalTime,
-                activities,
-                totalSessions: snapshot.size
-            };
+            // Initialize activities data
+            activityIds.forEach(id => {
+                activities[id] = {
+                    name: activityNames[id] || 'Attività sconosciuta',
+                    dailyTime: {},
+                    totalTime: 0
+                };
+                dates.forEach(date => {
+                    activities[id].dailyTime[date] = 0;
+                });
+            });
+            
+            // Process entries
+            snapshot.forEach(doc => {
+                const entry = doc.data();
+                const date = entry.date;
+                const duration = entry.duration || 0;
+                
+                if (activities[entry.activityId] && activities[entry.activityId].dailyTime[date] !== undefined) {
+                    activities[entry.activityId].dailyTime[date] += duration;
+                    activities[entry.activityId].totalTime += duration;
+                }
+            });
+            
+            return { activities, dates };
         }
 
-        function displayStats(stats) {
+        function generateDateRange(startDate, endDate) {
+            const dates = [];
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                dates.push(d.toISOString().split('T')[0]);
+            }
+            
+            return dates;
+        }
+
+        function displayTimelineStats(data) {
             const container = document.getElementById('statsGrid');
+            const totalActivities = Object.keys(data.activities).length;
+            const totalTime = Object.values(data.activities).reduce((sum, activity) => sum + activity.totalTime, 0);
+            const avgDaily = totalTime / data.dates.length;
+            
             container.innerHTML = `
                 <div class="stat-card">
-                    <div class="stat-value">${formatTime(stats.totalTime)}</div>
+                    <div class="stat-value">${formatTime(totalTime)}</div>
                     <div class="stat-label">Tempo Totale</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">${stats.totalSessions}</div>
-                    <div class="stat-label">Sessioni</div>
+                    <div class="stat-value">${formatTime(avgDaily)}</div>
+                    <div class="stat-label">Media Giornaliera</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">${Object.keys(stats.activities).length}</div>
+                    <div class="stat-value">${totalActivities}</div>
                     <div class="stat-label">Attività</div>
                 </div>
             `;
         }
 
-        function updateChart(stats) {
-            const ctx = document.getElementById('activityChart').getContext('2d');
+        function updateTimelineChart(data, period) {
+            const ctx = document.getElementById('timelineChart').getContext('2d');
             
-            if (chart) {
-                chart.destroy();
+            if (timelineChart) {
+                timelineChart.destroy();
             }
             
-            const labels = [];
-            const data = [];
-            const colors = ['#007aff', '#34c759', '#ff9500', '#ff3b30', '#af52de', '#5ac8fa'];
+            const colors = ['#007aff', '#34c759', '#ff9500', '#ff3b30', '#af52de', '#5ac8fa', '#ffcc00', '#ff6b6b'];
+            const datasets = [];
             
-            Object.entries(stats.activities).forEach(([activityId, activity], index) => {
-                labels.push(activity.name); // Now using the actual activity name
-                data.push(Math.round(activity.duration / 60000)); // Convert to minutes
+            Object.values(data.activities).forEach((activity, index) => {
+                const activityData = data.dates.map(date => 
+                    Math.round(activity.dailyTime[date] / 60000) // Convert to minutes
+                );
+                
+                datasets.push({
+                    label: activity.name,
+                    data: activityData,
+                    borderColor: colors[index % colors.length],
+                    backgroundColor: colors[index % colors.length] + '20',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                });
             });
             
-            chart = new Chart(ctx, {
+            const labels = data.dates.map(date => {
+                const d = new Date(date);
+                if (selectedPeriod === 'day') {
+                    return d.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
+                } else if (selectedPeriod === 'week') {
+                    return d.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
+                } else {
+                    return d.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
+                }
+            });
+            
+            timelineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            titleColor: '#1d1d1f',
+                            bodyColor: '#1d1d1f',
+                            borderColor: '#d2d2d7',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    const minutes = context.parsed.y;
+                                    const hours = Math.floor(minutes / 60);
+                                    const mins = minutes % 60;
+                                    return `${context.dataset.label}: ${hours}h ${mins}m`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: '#f0f0f0',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#86868b',
+                                maxTicksLimit: 10
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#f0f0f0',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#86868b',
+                                callback: function(value) {
+                                    const hours = Math.floor(value / 60);
+                                    const minutes = value % 60;
+                                    if (hours > 0) {
+                                        return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+                                    }
+                                    return `${minutes}m`;
+                                }
+                            }
+                        }
+                    },
+                    elements: {
+                        point: {
+                            hoverBackgroundColor: '#fff',
+                            hoverBorderWidth: 2
+                        }
+                    }
+                }
+            });
+        }
+
+        function updatePieChart(data) {
+            const ctx = document.getElementById('pieChart').getContext('2d');
+            
+            if (pieChart) {
+                pieChart.destroy();
+            }
+            
+            const colors = ['#007aff', '#34c759', '#ff9500', '#ff3b30', '#af52de', '#5ac8fa', '#ffcc00', '#ff6b6b'];
+            const labels = [];
+            const chartData = [];
+            
+            Object.values(data.activities).forEach((activity, index) => {
+                if (activity.totalTime > 0) {
+                    labels.push(activity.name);
+                    chartData.push(Math.round(activity.totalTime / 60000)); // Convert to minutes
+                }
+            });
+            
+            if (chartData.length === 0) {
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.fillStyle = '#86868b';
+                ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Nessun dato disponibile per il periodo selezionato', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                return;
+            }
+            
+            pieChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: labels,
                     datasets: [{
-                        data: data,
-                        backgroundColor: colors.slice(0, data.length),
-                        borderWidth: 0
+                        data: chartData,
+                        backgroundColor: colors.slice(0, chartData.length),
+                        borderWidth: 0,
+                        borderRadius: 4
                     }]
                 },
                 options: {
@@ -615,12 +834,61 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: 'bottom'
+                            position: 'right',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    if (data.labels.length && data.datasets.length) {
+                                        return data.labels.map((label, i) => {
+                                            const minutes = data.datasets[0].data[i];
+                                            const hours = Math.floor(minutes / 60);
+                                            const mins = minutes % 60;
+                                            const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+                                            
+                                            return {
+                                                text: `${label} (${timeStr})`,
+                                                fillStyle: data.datasets[0].backgroundColor[i],
+                                                pointStyle: 'circle',
+                                                index: i
+                                            };
+                                        });
+                                    }
+                                    return [];
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            titleColor: '#1d1d1f',
+                            bodyColor: '#1d1d1f',
+                            borderColor: '#d2d2d7',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    const minutes = context.parsed;
+                                    const hours = Math.floor(minutes / 60);
+                                    const mins = minutes % 60;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((minutes / total) * 100).toFixed(1);
+                                    return `${context.label}: ${hours}h ${mins}m (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%',
+                    elements: {
+                        arc: {
+                            borderWidth: 0
                         }
                     }
                 }
             });
         }
+
+        // Handle period filter change - REMOVED OLD FUNCTION
 
         // Utility Functions
         function formatTime(milliseconds) {
