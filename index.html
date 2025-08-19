@@ -99,7 +99,25 @@
         .empty-state h3 { margin-bottom: 10px; }
         .archived-badge { background: #ff9500; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-left: 10px; }
         
+        /* Mobile Chart Optimizations */
+        .chart-tabs { display: none; background: #f2f2f7; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
+        .chart-tab { flex: 1; padding: 10px 15px; border: none; background: transparent; color: #86868b; font-weight: 500; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: center; font-size: 14px; }
+        .chart-tab.active { background: white; color: #007aff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        
+        .chart-container.mobile-hidden { display: block; }
+        
+        /* Mobile Stats Cards - Horizontal Scroll */
+        .mobile-stats-scroll { display: none; }
+        .mobile-stats-container { display: flex; gap: 15px; overflow-x: auto; padding: 0 5px 15px 5px; -webkit-overflow-scrolling: touch; }
+        .mobile-stats-container::-webkit-scrollbar { height: 4px; }
+        .mobile-stats-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 2px; }
+        .mobile-stats-container::-webkit-scrollbar-thumb { background: #007aff; border-radius: 2px; }
+        .mobile-stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center; min-width: 180px; flex-shrink: 0; }
+        .mobile-stat-value { font-size: 22px; font-weight: 600; margin-bottom: 5px; }
+        .mobile-stat-label { font-size: 13px; opacity: 0.8; }
+        
         @media (max-width: 768px) {
+            .container { padding: 15px; }
             .nav-desktop { display: none; }
             .nav-mobile { display: block; }
             .timer-time { font-size: 36px; }
@@ -107,9 +125,32 @@
             .activity-item { flex-direction: column; align-items: flex-start; gap: 10px; }
             .filters { flex-direction: column; }
             .filter-tabs { flex-direction: column; }
-            .filter-tab { min-width: unset; }
+            .filter-tab { min-width: unset; padding: 12px 16px; font-size: 15px; }
             .custom-date-inputs { flex-direction: column; align-items: stretch; }
             .date-input-group { width: 100%; }
+            .card { padding: 20px; margin-bottom: 15px; }
+            
+            /* Mobile Stats Grid - Hide and show horizontal scroll */
+            .stats-grid { display: none; }
+            .mobile-stats-scroll { display: block; }
+            
+            /* Mobile Chart Optimizations */
+            .chart-tabs { display: flex; }
+            .chart-container { height: 300px; padding: 15px; margin-bottom: 20px; }
+            .chart-container.mobile-hidden { display: none; }
+            
+            /* Improve chart legend for mobile */
+            .chart-container canvas { max-height: 250px; }
+        }
+        
+        @media (max-width: 480px) {
+            .container { padding: 10px; }
+            .card { padding: 15px; }
+            .filter-tab { padding: 10px 12px; font-size: 14px; }
+            .chart-container { height: 280px; padding: 12px; }
+            .mobile-stat-card { min-width: 160px; padding: 16px; }
+            .mobile-stat-value { font-size: 20px; }
+            .timer-time { font-size: 28px; }
         }
     </style>
 </head>
@@ -221,11 +262,25 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Desktop Stats Grid -->
                 <div class="stats-grid" id="statsGrid"></div>
-                <div class="chart-container">
+                
+                <!-- Mobile Stats Horizontal Scroll -->
+                <div class="mobile-stats-scroll">
+                    <div class="mobile-stats-container" id="mobileStatsContainer"></div>
+                </div>
+                
+                <!-- Mobile Chart Tabs -->
+                <div class="chart-tabs">
+                    <button class="chart-tab active" onclick="showChart('timeline')">Andamento</button>
+                    <button class="chart-tab" onclick="showChart('pie')">Distribuzione</button>
+                </div>
+                
+                <div class="chart-container" id="timelineChartContainer">
                     <canvas id="timelineChart"></canvas>
                 </div>
-                <div class="chart-container">
+                <div class="chart-container mobile-hidden" id="pieChartContainer">
                     <canvas id="pieChart"></canvas>
                 </div>
             </div>
@@ -262,6 +317,7 @@
         let timelineChart = null;
         let pieChart = null;
         let selectedPeriod = 'day';
+        let currentChart = 'timeline'; // Add this for mobile chart switching
 
         // Mobile Menu Functions
         function toggleMobileMenu() {
@@ -296,6 +352,27 @@
             
             if (pageId === 'storico') updateStats();
             if (pageId === 'archiviate') loadArchivedActivities();
+        }
+
+        // Mobile Chart Switching
+        function showChart(chartType) {
+            const timelineContainer = document.getElementById('timelineChartContainer');
+            const pieContainer = document.getElementById('pieChartContainer');
+            const chartTabs = document.querySelectorAll('.chart-tab');
+            
+            // Update tab appearance
+            chartTabs.forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            currentChart = chartType;
+            
+            if (chartType === 'timeline') {
+                timelineContainer.classList.remove('mobile-hidden');
+                pieContainer.classList.add('mobile-hidden');
+            } else {
+                timelineContainer.classList.add('mobile-hidden');
+                pieContainer.classList.remove('mobile-hidden');
+            }
         }
 
         // Activity Management
@@ -653,11 +730,12 @@
 
         function displayTimelineStats(data) {
             const container = document.getElementById('statsGrid');
+            const mobileContainer = document.getElementById('mobileStatsContainer');
             const totalActivities = Object.keys(data.activities).length;
             const totalTime = Object.values(data.activities).reduce((sum, activity) => sum + activity.totalTime, 0);
             const avgDaily = totalTime / data.dates.length;
             
-            container.innerHTML = `
+            const statsHTML = `
                 <div class="stat-card">
                     <div class="stat-value">${formatTime(totalTime)}</div>
                     <div class="stat-label">Tempo Totale</div>
@@ -671,6 +749,24 @@
                     <div class="stat-label">Attività</div>
                 </div>
             `;
+            
+            const mobileStatsHTML = `
+                <div class="mobile-stat-card">
+                    <div class="mobile-stat-value">${formatTime(totalTime)}</div>
+                    <div class="mobile-stat-label">Tempo Totale</div>
+                </div>
+                <div class="mobile-stat-card">
+                    <div class="mobile-stat-value">${formatTime(avgDaily)}</div>
+                    <div class="mobile-stat-label">Media Giornaliera</div>
+                </div>
+                <div class="mobile-stat-card">
+                    <div class="mobile-stat-value">${totalActivities}</div>
+                    <div class="mobile-stat-label">Attività</div>
+                </div>
+            `;
+            
+            container.innerHTML = statsHTML;
+            mobileContainer.innerHTML = mobileStatsHTML;
         }
 
         function updateTimelineChart(data, period) {
@@ -693,22 +789,27 @@
                     data: activityData,
                     borderColor: colors[index % colors.length],
                     backgroundColor: colors[index % colors.length] + '20',
-                    borderWidth: 3,
+                    borderWidth: window.innerWidth <= 768 ? 2 : 3,
                     fill: true,
                     tension: 0.4,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
+                    pointRadius: window.innerWidth <= 768 ? 2 : 4,
+                    pointHoverRadius: window.innerWidth <= 768 ? 4 : 6
                 });
             });
             
             const labels = data.dates.map(date => {
                 const d = new Date(date);
-                if (selectedPeriod === 'day') {
-                    return d.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
-                } else if (selectedPeriod === 'week') {
-                    return d.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
+                if (window.innerWidth <= 768) {
+                    // Shorter labels for mobile
+                    return d.getDate() + '/' + (d.getMonth() + 1);
                 } else {
-                    return d.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
+                    if (selectedPeriod === 'day') {
+                        return d.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
+                    } else if (selectedPeriod === 'week') {
+                        return d.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
+                    } else {
+                        return d.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
+                    }
                 }
             });
             
@@ -727,10 +828,13 @@
                     },
                     plugins: {
                         legend: {
-                            position: 'top',
+                            position: window.innerWidth <= 768 ? 'bottom' : 'top',
                             labels: {
                                 usePointStyle: true,
-                                padding: 20
+                                padding: window.innerWidth <= 768 ? 15 : 20,
+                                font: {
+                                    size: window.innerWidth <= 768 ? 12 : 14
+                                }
                             }
                         },
                         tooltip: {
@@ -741,6 +845,12 @@
                             borderWidth: 1,
                             cornerRadius: 8,
                             displayColors: true,
+                            titleFont: {
+                                size: window.innerWidth <= 768 ? 12 : 14
+                            },
+                            bodyFont: {
+                                size: window.innerWidth <= 768 ? 11 : 13
+                            },
                             callbacks: {
                                 label: function(context) {
                                     const minutes = context.parsed.y;
@@ -759,7 +869,10 @@
                             },
                             ticks: {
                                 color: '#86868b',
-                                maxTicksLimit: 10
+                                maxTicksLimit: window.innerWidth <= 768 ? 6 : 10,
+                                font: {
+                                    size: window.innerWidth <= 768 ? 10 : 12
+                                }
                             }
                         },
                         y: {
@@ -770,13 +883,21 @@
                             },
                             ticks: {
                                 color: '#86868b',
+                                font: {
+                                    size: window.innerWidth <= 768 ? 10 : 12
+                                },
                                 callback: function(value) {
                                     const hours = Math.floor(value / 60);
                                     const minutes = value % 60;
-                                    if (hours > 0) {
-                                        return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+                                    if (window.innerWidth <= 768) {
+                                        // Shorter format for mobile
+                                        return hours > 0 ? `${hours}h` : `${minutes}m`;
+                                    } else {
+                                        if (hours > 0) {
+                                            return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+                                        }
+                                        return `${minutes}m`;
                                     }
-                                    return `${minutes}m`;
                                 }
                             }
                         }
@@ -812,7 +933,7 @@
             if (chartData.length === 0) {
                 ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
                 ctx.fillStyle = '#86868b';
-                ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                ctx.font = `${window.innerWidth <= 768 ? '14' : '16'}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
                 ctx.textAlign = 'center';
                 ctx.fillText('Nessun dato disponibile per il periodo selezionato', ctx.canvas.width / 2, ctx.canvas.height / 2);
                 return;
@@ -834,10 +955,13 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: 'right',
+                            position: window.innerWidth <= 768 ? 'bottom' : 'right',
                             labels: {
                                 usePointStyle: true,
-                                padding: 20,
+                                padding: window.innerWidth <= 768 ? 15 : 20,
+                                font: {
+                                    size: window.innerWidth <= 768 ? 11 : 14
+                                },
                                 generateLabels: function(chart) {
                                     const data = chart.data;
                                     if (data.labels.length && data.datasets.length) {
@@ -845,10 +969,16 @@
                                             const minutes = data.datasets[0].data[i];
                                             const hours = Math.floor(minutes / 60);
                                             const mins = minutes % 60;
-                                            const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+                                            let timeStr;
+                                            if (window.innerWidth <= 768) {
+                                                // Shorter format for mobile
+                                                timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+                                            } else {
+                                                timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+                                            }
                                             
                                             return {
-                                                text: `${label} (${timeStr})`,
+                                                text: window.innerWidth <= 768 ? `${label.length > 15 ? label.substring(0, 12) + '...' : label} (${timeStr})` : `${label} (${timeStr})`,
                                                 fillStyle: data.datasets[0].backgroundColor[i],
                                                 pointStyle: 'circle',
                                                 index: i
@@ -866,6 +996,12 @@
                             borderColor: '#d2d2d7',
                             borderWidth: 1,
                             cornerRadius: 8,
+                            titleFont: {
+                                size: window.innerWidth <= 768 ? 12 : 14
+                            },
+                            bodyFont: {
+                                size: window.innerWidth <= 768 ? 11 : 13
+                            },
                             callbacks: {
                                 label: function(context) {
                                     const minutes = context.parsed;
@@ -888,8 +1024,6 @@
             });
         }
 
-        // Handle period filter change - REMOVED OLD FUNCTION
-
         // Utility Functions
         function formatTime(milliseconds) {
             const seconds = Math.floor(milliseconds / 1000);
@@ -899,6 +1033,23 @@
             
             return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
         }
+
+        // Handle window resize for chart responsiveness
+        window.addEventListener('resize', function() {
+            if (timelineChart) {
+                timelineChart.destroy();
+            }
+            if (pieChart) {
+                pieChart.destroy();
+            }
+            
+            // Recreate charts with new responsive settings
+            if (document.getElementById('storico').classList.contains('active')) {
+                setTimeout(() => {
+                    updateStats();
+                }, 100);
+            }
+        });
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
